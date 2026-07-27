@@ -1,0 +1,3 @@
+@echo off
+chcp 65001 >nul
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0set-remote-autostart.ps1" -Remove

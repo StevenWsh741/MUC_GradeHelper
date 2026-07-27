@@ -17,7 +17,8 @@ import javax.crypto.spec.SecretKeySpec;
 final class CryptoMessage {
     private static final String PROTOCOL = "muc-grade-helper-v1";
 
-    final boolean test;
+    final String type;
+    final String status;
     final String nonce;
     final long timestamp;
     final List<Score> scores;
@@ -32,8 +33,9 @@ final class CryptoMessage {
         }
     }
 
-    private CryptoMessage(boolean test, String nonce, long timestamp, List<Score> scores) {
-        this.test = test;
+    private CryptoMessage(String type, String status, String nonce, long timestamp, List<Score> scores) {
+        this.type = type;
+        this.status = status;
         this.nonce = nonce;
         this.timestamp = timestamp;
         this.scores = scores;
@@ -61,6 +63,20 @@ final class CryptoMessage {
         }
         String nonce = json.optString("nonce", "");
         if (nonce.length() < 12) throw new GeneralSecurityException("消息随机值无效");
+        String type = json.optString("type", "");
+        if ("desktop_status".equals(type)) {
+            String status = json.optString("status", "");
+            if (!status.matches("started|ready|already_running|failed|invalid_credentials")) {
+                throw new GeneralSecurityException("电脑状态无效");
+            }
+            return new CryptoMessage(type, status, nonce, timestamp, new ArrayList<>());
+        }
+        if ("start_checker".equals(type)) {
+            return new CryptoMessage(type, "", nonce, timestamp, new ArrayList<>());
+        }
+        if (!"new_scores".equals(type) && !"test".equals(type)) {
+            throw new GeneralSecurityException("消息类型无效");
+        }
 
         JSONArray values = json.optJSONArray("scores");
         if (values == null || values.length() == 0 || values.length() > 50) {
@@ -74,6 +90,6 @@ final class CryptoMessage {
             if (!course.isEmpty() && !score.isEmpty()) scores.add(new Score(course, score));
         }
         if (scores.isEmpty()) throw new GeneralSecurityException("成绩列表为空");
-        return new CryptoMessage("test".equals(json.optString("type")), nonce, timestamp, scores);
+        return new CryptoMessage(type, "", nonce, timestamp, scores);
     }
 }

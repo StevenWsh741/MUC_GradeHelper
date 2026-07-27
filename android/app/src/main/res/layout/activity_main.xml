@@ -88,6 +88,75 @@
                 android:text="停止提醒并清除配对信息" />
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/panel_background"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="手机远程启动电脑查分"
+                android:textColor="@color/ink"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="电脑需先双击“启动手机远程控制.cmd”并保持窗口开启。首次输入后，凭据将由 Android Keystore 加密保存在本机。"
+                android:textColor="#765A4B"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/usernameInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="学号 / 统一身份认证用户名"
+                android:importantForAutofill="no"
+                android:inputType="text|textNoSuggestions"
+                android:maxLength="100" />
+
+            <EditText
+                android:id="@+id/passwordInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="统一身份认证密码"
+                android:importantForAutofill="no"
+                android:inputType="textPassword"
+                android:maxLength="300" />
+
+            <TextView
+                android:id="@+id/credentialStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="本机尚未保存学校账号凭据"
+                android:textColor="@color/phoenix_red"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/remoteStartButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="@color/phoenix_red"
+                android:text="加密保存并让电脑开始查分"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/clearCredentialsButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="清除本机保存的学号和密码" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/statusText"
             android:layout_width="match_parent"
@@ -104,7 +173,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="隐私说明：App 不保存成绩历史、学号、密码或 Cookie。配对密钥仅保存在本 App 的私有存储中。关闭监听后不再连网。"
+            android:text="隐私说明：App 不保存成绩历史或 Cookie。学校凭据和配对信息分别由 Android Keystore 密钥加密后保存在 App 私有存储；启动指令不在中转端缓存。可随时点击按钮清除凭据。"
             android:textColor="#765A4B"
             android:textSize="13sp" />
     </LinearLayout>

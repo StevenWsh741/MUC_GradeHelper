@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { chromium } = require('playwright-core');
-const { sendRemoteScores } = require('./muc-remote-notify');
+const { sendRemoteScores, sendRemoteStatus } = require('./muc-remote-notify');
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, 'config.json');
@@ -649,6 +649,10 @@ async function main() {
       throw new Error(`等待 ${config.manualNavigationTimeoutMinutes} 分钟后仍未识别到成绩表。请确认已打开“本学期成绩”页面。`);
     }
     await captureAndCompare(context, true);
+    if (process.env.MUC_REMOTE_STARTED === '1') {
+      await sendRemoteStatus('ready')
+        .catch(error => log(`手机就绪回执发送失败：${error.message}`, 'yellow'));
+    }
 
     if (!loopMode) return;
     while (true) {

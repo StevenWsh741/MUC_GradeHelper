@@ -26,7 +26,7 @@ function loadRemoteConfig() {
   }
 }
 
-function encryptMessage(remoteConfig, scores, test = false) {
+function encryptPayload(remoteConfig, payload) {
   const iv = crypto.randomBytes(12);
   const key = Buffer.from(remoteConfig.key, 'base64url');
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
@@ -35,18 +35,14 @@ function encryptMessage(remoteConfig, scores, test = false) {
     v: 1,
     timestamp: Date.now(),
     nonce: crypto.randomBytes(16).toString('base64url'),
-    type: test ? 'test' : 'new_scores',
-    scores: scores.map(item => ({
-      course: String(item.course || '').slice(0, 200),
-      score: String(item.score || '').slice(0, 50)
-    }))
+    ...payload
   }), 'utf8');
   const encrypted = Buffer.concat([cipher.update(body), cipher.final()]);
   const tag = cipher.getAuthTag();
   return Buffer.concat([iv, encrypted, tag]).toString('base64url');
 }
 
-function decryptMessageForSelfTest(remoteConfig, ciphertext) {
+function decryptPayload(remoteConfig, ciphertext) {
   const packed = Buffer.from(ciphertext, 'base64url');
   if (packed.length < 29) throw new Error('invalid ciphertext');
   const decipher = crypto.createDecipheriv(
@@ -63,7 +59,7 @@ function decryptMessageForSelfTest(remoteConfig, ciphertext) {
   return JSON.parse(plaintext.toString('utf8'));
 }
 
-function postCiphertext(remoteConfig, ciphertext) {
+function postCiphertext(remoteConfig, ciphertext, options = {}) {
   return new Promise((resolve, reject) => {
     const endpoint = new URL(remoteConfig.endpoint.replace(/\/$/, '') + '/' + remoteConfig.topic);
     const body = Buffer.from(ciphertext, 'utf8');
@@ -76,8 +72,8 @@ function postCiphertext(remoteConfig, ciphertext) {
         'Title': 'MUC encrypted notification',
         'Tags': 'lock',
         'Priority': 'high',
-        'Cache': 'yes',
-        'Expires': '1d'
+        'Cache': options.cache === false ? 'no' : 'yes',
+        ...(options.cache === false ? {} : { 'Expires': '1d' })
       }
     }, response => {
       response.resume();
@@ -96,8 +92,25 @@ async function sendRemoteScores(scores, options = {}) {
   const remoteConfig = loadRemoteConfig();
   if (!remoteConfig) return { sent: false, reason: 'not_configured' };
   if (!Array.isArray(scores) || !scores.length) return { sent: false, reason: 'empty' };
-  const ciphertext = encryptMessage(remoteConfig, scores, Boolean(options.test));
+  const ciphertext = encryptPayload(remoteConfig, {
+    type: options.test ? 'test' : 'new_scores',
+    scores: scores.map(item => ({
+      course: String(item.course || '').slice(0, 200),
+      score: String(item.score || '').slice(0, 50)
+    }))
+  });
   await postCiphertext(remoteConfig, ciphertext);
+  return { sent: true };
+}
+
+async function sendRemoteStatus(status) {
+  const remoteConfig = loadRemoteConfig();
+  if (!remoteConfig) return { sent: false, reason: 'not_configured' };
+  const ciphertext = encryptPayload(remoteConfig, {
+    type: 'desktop_status',
+    status: String(status || '').slice(0, 50)
+  });
+  await postCiphertext(remoteConfig, ciphertext, { cache: false });
   return { sent: true };
 }
 
@@ -138,7 +151,7 @@ async function runEndToEndSelfTest() {
           try {
             const event = JSON.parse(line);
             if (event.event !== 'message') continue;
-            const decoded = decryptMessageForSelfTest(remoteConfig, event.message || '');
+            const decoded = decryptPayload(remoteConfig, event.message || '');
             if (decoded.type !== 'test' || decoded.scores?.[0]?.course !== course) continue;
             if (line.includes(course)) return finish(new Error('relay received plaintext'));
             return finish();
@@ -186,4 +199,13 @@ if (require.main === module && process.argv.includes('--self-test')) {
     });
 }
 
-module.exports = { loadRemoteConfig, sendRemoteScores, createPairingCode };
+module.exports = {
+  PROTOCOL,
+  loadRemoteConfig,
+  encryptPayload,
+  decryptPayload,
+  postCiphertext,
+  sendRemoteScores,
+  sendRemoteStatus,
+  createPairingCode
+};

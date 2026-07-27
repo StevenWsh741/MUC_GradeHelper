@@ -78,7 +78,7 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
                 connection.setConnectTimeout(20_000);
                 connection.setReadTimeout(90_000);
                 connection.setRequestProperty("Accept", "application/x-ndjson");
-                connection.setRequestProperty("User-Agent", "MUC-GradeHelper-Android/1.0");
+                connection.setRequestProperty("User-Agent", "MUC-GradeHelper-Android/1.1");
                 int status = connection.getResponseCode();
                 if (status < 200 || status >= 300) throw new IllegalStateException("HTTP " + status);
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -120,7 +120,11 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
                     seenNonces.remove(first);
                 }
             }
-            showGradeAlert(message);
+            if ("desktop_status".equals(message.type)) {
+                showDesktopStatus(message.status);
+            } else if ("new_scores".equals(message.type) || "test".equals(message.type)) {
+                showGradeAlert(message);
+            }
             PairingConfig.setLastMessageNonce(this, message.nonce);
             PairingConfig.setLastRelayId(this, event.optString("id", ""));
         } catch (Exception ignored) {
@@ -137,7 +141,8 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
             if (speech.length() > 0) speech.append("。");
             speech.append(value.course).append("，").append(spokenScore(value.score));
         }
-        String title = message.test ? "手机提醒测试（虚构数据）" : "新成绩已发布";
+        boolean test = "test".equals(message.type);
+        String title = test ? "手机提醒测试（虚构数据）" : "新成绩已发布";
         Notification notification = new Notification.Builder(this, CHANNEL_ALERT)
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setContentTitle(title)
@@ -153,9 +158,42 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
         manager.notify((int) (System.currentTimeMillis() & 0x7fffffff), notification);
 
         if (speechReady && textToSpeech != null) {
-            String prefix = message.test ? "手机提醒测试。" : "新成绩。";
+            String prefix = test ? "手机提醒测试。" : "新成绩。";
             textToSpeech.speak(prefix + speech, TextToSpeech.QUEUE_FLUSH, null, "new-grade");
         }
+    }
+
+    private void showDesktopStatus(String status) {
+        String text;
+        switch (status) {
+            case "started":
+                text = "电脑已收到指令，正在打开网页版查分";
+                break;
+            case "ready":
+                text = "电脑已登录并读取成绩表，正在自动查分";
+                break;
+            case "already_running":
+                text = "电脑查分程序已经在运行";
+                break;
+            case "invalid_credentials":
+                text = "电脑拒绝了格式无效的账号凭据";
+                break;
+            default:
+                text = "电脑未能启动查分程序";
+                break;
+        }
+        Notification notification = new Notification.Builder(this, CHANNEL_ALERT)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentTitle("电脑远程启动状态")
+                .setContentText(text)
+                .setStyle(new Notification.BigTextStyle().bigText(text))
+                .setContentIntent(mainPendingIntent())
+                .setAutoCancel(true)
+                .setCategory(Notification.CATEGORY_STATUS)
+                .setColor(getColor(R.color.phoenix_red))
+                .setVisibility(Notification.VISIBILITY_PRIVATE)
+                .build();
+        getSystemService(NotificationManager.class).notify(102, notification);
     }
 
     private String spokenScore(String score) {
