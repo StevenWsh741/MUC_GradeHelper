@@ -1,0 +1,11 @@
+node_modules/
+.browser-profile/
+.score-state.json
+*.log
+*.tmp
+.env
+.env.*
+!.env.example
+新成绩提醒.txt
+.DS_Store
+Thumbs.db

@@ -1,0 +1,11 @@
+{
+  "checkIntervalSeconds": 60,
+  "checkJitterSeconds": 10,
+  "manualNavigationTimeoutMinutes": 10,
+  "loginTimeoutMinutes": 5,
+  "alertIncludeScores": true,
+  "voiceRepeatCount": 2,
+  "speechRate": 3,
+  "announceExistingScoresOnLogin": true,
+  "phoenixVideo": "凤凰视频.mp4"
+}

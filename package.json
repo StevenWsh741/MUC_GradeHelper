@@ -1,0 +1,14 @@
+{
+  "name": "muc-score-checker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "中央民族大学本科生成绩自动检查与提醒",
+  "main": "muc-score-checker.js",
+  "scripts": {
+    "start": "node muc-score-checker.js --loop",
+    "check": "node --check muc-score-checker.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.54.1"
+  }
+}
