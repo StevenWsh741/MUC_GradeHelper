@@ -46,4 +46,6 @@
 
 ## License
 
+安卓手机加密远程提醒的安装、配对和隐私说明见 [ANDROID.md](ANDROID.md)。
+
 [MIT](LICENSE)

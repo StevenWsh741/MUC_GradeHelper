@@ -7,5 +7,6 @@
   "voiceRepeatCount": 2,
   "speechRate": 3,
   "announceExistingScoresOnLogin": true,
+  "remoteNotificationsEnabled": true,
   "phoenixVideo": "凤凰视频.mp4"
 }

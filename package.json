@@ -6,7 +6,8 @@
   "main": "muc-score-checker.js",
   "scripts": {
     "start": "node muc-score-checker.js --loop",
-    "check": "node --check muc-score-checker.js"
+    "check": "node --check muc-score-checker.js && node --check muc-remote-notify.js",
+    "remote:self-test": "node muc-remote-notify.js --self-test"
   },
   "dependencies": {
     "playwright-core": "^1.54.1"

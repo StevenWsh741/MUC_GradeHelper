@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/paper"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="凤凰图标"
+            android:src="@drawable/ic_launcher" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="MUC 成绩远程提醒"
+            android:textColor="@color/ink"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="电脑发送端到端加密消息，手机解密后通知、震动并语音播报。"
+            android:textColor="#765A4B"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/panel_background"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. 在电脑双击“配置手机提醒.cmd”\n2. 将配对码复制到手机\n3. 在下方粘贴并开启提醒"
+                android:textColor="@color/ink"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/pairingCode"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="@color/phoenix_red"
+                android:gravity="top|start"
+                android:hint="在此粘贴 mucgrade-v1: 开头的配对码"
+                android:importantForAutofill="noExcludeDescendants"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/pasteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="粘贴配对码" />
+
+            <Button
+                android:id="@+id/startButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/phoenix_red"
+                android:text="开启远程提醒"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/stopButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="停止提醒并清除配对信息" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/panel_background"
+            android:gravity="center"
+            android:text="状态：未配对"
+            android:textColor="@color/phoenix_red"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="隐私说明：App 不保存成绩历史、学号、密码或 Cookie。配对密钥仅保存在本 App 的私有存储中。关闭监听后不再连网。"
+            android:textColor="#765A4B"
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>

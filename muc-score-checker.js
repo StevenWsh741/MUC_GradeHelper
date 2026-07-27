@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { chromium } = require('playwright-core');
+const { sendRemoteScores } = require('./muc-remote-notify');
 
 const ROOT = __dirname;
 const CONFIG_PATH = path.join(ROOT, 'config.json');
@@ -528,6 +529,12 @@ function showAlert(newScores) {
   process.stdout.write('\x1b[0m');
 
   launchPhoenixAlert(newScores, newScores.length, newScores.length, 'new');
+  if (config.remoteNotificationsEnabled !== false) {
+    sendRemoteScores(newScores).then(result => {
+      if (result.sent) log('新成绩已端到端加密推送到手机。', 'cyan');
+      else if (result.reason === 'not_configured') log('手机提醒尚未配置，本次仅本机提醒。', 'yellow');
+    }).catch(error => log(`手机提醒发送失败：${error.message}`, 'yellow'));
+  }
 }
 
 function createRandomTestScores() {
