@@ -86,6 +86,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="停止提醒并清除配对信息" />
+
+            <Button
+                android:id="@+id/backgroundSettingsButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="打开后台保活与电池设置" />
         </LinearLayout>
 
         <LinearLayout

@@ -8,6 +8,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.Color;
 import android.media.AudioAttributes;
+import android.net.ConnectivityManager;
+import android.net.Network;
 import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
 
@@ -35,6 +37,8 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
     private final Set<String> seenNonces = new LinkedHashSet<>();
     private volatile boolean running;
     private volatile HttpURLConnection activeConnection;
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
     private TextToSpeech textToSpeech;
     private boolean speechReady;
 
@@ -43,6 +47,26 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
         super.onCreate();
         createChannels();
         textToSpeech = new TextToSpeech(this, this);
+        connectivityManager = getSystemService(ConnectivityManager.class);
+        if (connectivityManager != null) {
+            networkCallback = new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(Network network) {
+                    forceReconnect();
+                }
+
+                @Override
+                public void onLost(Network network) {
+                    updateListeningStatus("网络已变化，正在自动重连");
+                    forceReconnect();
+                }
+            };
+            try {
+                connectivityManager.registerDefaultNetworkCallback(networkCallback);
+            } catch (RuntimeException ignored) {
+                networkCallback = null;
+            }
+        }
     }
 
     @Override
@@ -52,7 +76,8 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
             stopSelf();
             return START_NOT_STICKY;
         }
-        startForeground(FOREGROUND_ID, listeningNotification("已连接加密提醒频道"));
+        startForeground(FOREGROUND_ID, listeningNotification("正在连接加密提醒频道"));
+        ServiceRecovery.schedule(this);
         if (!running) {
             running = true;
             worker.execute(this::listenLoop);
@@ -81,6 +106,7 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
                 connection.setRequestProperty("User-Agent", "MUC-GradeHelper-Android/1.1");
                 int status = connection.getResponseCode();
                 if (status < 200 || status >= 300) throw new IllegalStateException("HTTP " + status);
+                updateListeningStatus("已连接，断线后将自动恢复");
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                         connection.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
@@ -91,10 +117,11 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
                 }
             } catch (Exception ignored) {
                 activeConnection = null;
+                if (running) updateListeningStatus("连接中断，正在自动重连");
             }
             if (running) {
                 try {
-                    Thread.sleep(5_000);
+                    Thread.sleep(3_000);
                 } catch (InterruptedException ignored) {
                     Thread.currentThread().interrupt();
                     break;
@@ -211,6 +238,16 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
                 .build();
     }
 
+    private void updateListeningStatus(String text) {
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager != null) manager.notify(FOREGROUND_ID, listeningNotification(text));
+    }
+
+    private void forceReconnect() {
+        HttpURLConnection connection = activeConnection;
+        if (connection != null) connection.disconnect();
+    }
+
     private PendingIntent mainPendingIntent() {
         Intent intent = new Intent(this, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -254,12 +291,25 @@ public class NotificationService extends Service implements TextToSpeech.OnInitL
     public void onDestroy() {
         running = false;
         if (activeConnection != null) activeConnection.disconnect();
+        if (connectivityManager != null && networkCallback != null) {
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback);
+            } catch (RuntimeException ignored) {
+            }
+        }
         worker.shutdownNow();
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
         }
+        if (PairingConfig.isEnabled(this)) ServiceRecovery.scheduleSoon(this);
         super.onDestroy();
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        if (PairingConfig.isEnabled(this)) ServiceRecovery.scheduleSoon(this);
+        super.onTaskRemoved(rootIntent);
     }
 
     @Override

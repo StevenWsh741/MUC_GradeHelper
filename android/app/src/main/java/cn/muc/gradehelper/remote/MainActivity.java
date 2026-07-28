@@ -7,8 +7,10 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -37,6 +39,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.pasteButton).setOnClickListener(this::pasteCode);
         findViewById(R.id.startButton).setOnClickListener(this::startListening);
         findViewById(R.id.stopButton).setOnClickListener(this::stopListening);
+        findViewById(R.id.backgroundSettingsButton).setOnClickListener(this::openBackgroundSettings);
         findViewById(R.id.remoteStartButton).setOnClickListener(this::saveAndStartComputer);
         findViewById(R.id.clearCredentialsButton).setOnClickListener(this::clearCredentials);
         refreshStatus();
@@ -45,6 +48,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (PairingConfig.isEnabled(this) && PairingConfig.load(this) != null) {
+            ServiceRecovery.startIfEnabled(this);
+            ServiceRecovery.schedule(this);
+        }
         refreshStatus();
     }
 
@@ -70,9 +77,8 @@ public class MainActivity extends Activity {
                     && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1001);
             }
-            Intent intent = new Intent(this, NotificationService.class).setAction(NotificationService.ACTION_START);
-            if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent);
-            else startService(intent);
+            ServiceRecovery.startIfEnabled(this);
+            ServiceRecovery.schedule(this);
             refreshStatus();
             Toast.makeText(this, "远程提醒已开启", Toast.LENGTH_LONG).show();
         } catch (Exception error) {
@@ -82,10 +88,23 @@ public class MainActivity extends Activity {
 
     private void stopListening(View ignored) {
         PairingConfig.setEnabled(this, false);
+        ServiceRecovery.cancel(this);
         stopService(new Intent(this, NotificationService.class));
         PairingConfig.clear(this);
         refreshStatus();
         Toast.makeText(this, "已停止监听并清除配对信息", Toast.LENGTH_LONG).show();
+    }
+
+    private void openBackgroundSettings(View ignored) {
+        try {
+            startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        } catch (RuntimeException error) {
+            Intent details = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + getPackageName()));
+            startActivity(details);
+        }
+        Toast.makeText(this, "请将本 App 的电池策略设为不限制，并允许后台活动和自启动",
+                Toast.LENGTH_LONG).show();
     }
 
     private void saveAndStartComputer(View button) {
@@ -135,7 +154,7 @@ public class MainActivity extends Activity {
 
     private void refreshStatus() {
         if (PairingConfig.isEnabled(this) && PairingConfig.load(this) != null) {
-            statusText.setText("状态：已配对，远程提醒正在运行");
+            statusText.setText("状态：已配对，后台监听会自动恢复");
             statusText.setTextColor(getColor(R.color.phoenix_red));
         } else {
             statusText.setText("状态：未配对");
